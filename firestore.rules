@@ -1,0 +1,77 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 0. Default Deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        request.auth.token.email == 'kaustubhgaur.work@gmail.com' && request.auth.token.email_verified == true
+      );
+    }
+
+    // --- Users ---
+    function isValidUser(data) {
+      return data.keys().hasAll(['uid', 'email']) &&
+             data.uid is string && data.email is string &&
+             data.email.size() <= 200;
+    }
+
+    match /users/{userId} {
+      allow get: if isOwner(userId) || isAdmin();
+      allow create: if isOwner(userId) && isValidUser(request.resource.data);
+      allow update: if isOwner(userId) && isValidUser(request.resource.data) &&
+                    request.resource.data.diff(resource.data).affectedKeys().hasOnly(['displayName', 'photoURL', 'subscriptionStatus', 'lemonSqueezyCustomerId']);
+    }
+
+    // --- Projects ---
+    function isValidProject(data) {
+      return data.keys().hasAll(['title', 'ownerId']) &&
+             data.title is string && data.title.size() <= 200 &&
+             data.ownerId == request.auth.uid;
+    }
+
+    match /projects/{projectId} {
+      allow get: if (isSignedIn() && resource.data.get('ownerId', null) == request.auth.uid) || resource.data.get('shareSlug', null) != null;
+      allow list: if (isSignedIn() && resource.data.get('ownerId', null) == request.auth.uid) || resource.data.get('shareSlug', null) != null;
+      allow create: if isSignedIn() && isValidProject(request.resource.data) && isValidId(projectId);
+      allow update: if isSignedIn() && resource.data.get('ownerId', null) == request.auth.uid && isValidProject(request.resource.data) &&
+                    request.resource.data.diff(resource.data).affectedKeys().hasAny(['title', 'theme', 'isTrashed', 'isDraft', 'shareSlug', 'updatedAt']);
+      allow delete: if isSignedIn() && resource.data.get('ownerId', null) == request.auth.uid;
+
+      // --- Slides ---
+      function isValidSlide(data) {
+        return data.keys().hasAll(['projectId', 'order']) &&
+               data.projectId == projectId &&
+               data.order is int;
+      }
+
+      match /slides/{slideId} {
+        allow read: if (isSignedIn() && get(/databases/$(database)/documents/projects/$(projectId)).data.get('ownerId', null) == request.auth.uid) || get(/databases/$(database)/documents/projects/$(projectId)).data.get('shareSlug', null) != null;
+        allow create, update: if isSignedIn() && get(/databases/$(database)/documents/projects/$(projectId)).data.get('ownerId', null) == request.auth.uid && isValidSlide(request.resource.data) && isValidId(slideId);
+        allow delete: if isSignedIn() && get(/databases/$(database)/documents/projects/$(projectId)).data.get('ownerId', null) == request.auth.uid;
+      }
+    }
+
+    // --- Templates ---
+    match /templates/{templateId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+  }
+}

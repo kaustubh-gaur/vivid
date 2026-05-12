@@ -1,0 +1,13 @@
+{
+  "name": "Vivid",
+  "description": "AI-powered presentation builder with real-time streaming, drag-and-drop editor, and professional template store.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ],
+  "majorCapabilities": [
+    "AI Content Generation",
+    "Real-time Collaboration",
+    "Digital Commerce"
+  ]
+}

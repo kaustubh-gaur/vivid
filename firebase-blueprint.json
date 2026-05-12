@@ -1,0 +1,84 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile and subscription data",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string" },
+        "displayName": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "subscriptionStatus": { "type": "string", "enum": ["free", "pro"] },
+        "lemonSqueezyCustomerId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email"]
+    },
+    "Project": {
+      "title": "Project",
+      "description": "A presentation project",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "ownerId": { "type": "string" },
+        "theme": { "type": "string" },
+        "isTrashed": { "type": "boolean" },
+        "isDraft": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" },
+        "shareSlug": { "type": "string" }
+      },
+      "required": ["title", "ownerId"]
+    },
+    "Slide": {
+      "title": "Slide",
+      "description": "A single slide in a presentation",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "projectId": { "type": "string" },
+        "order": { "type": "integer" },
+        "layout": { "type": "string" },
+        "title": { "type": "string" },
+        "content": { "type": "string" },
+        "imageUrl": { "type": "string" },
+        "notes": { "type": "string" }
+      },
+      "required": ["projectId", "order"]
+    },
+    "Template": {
+      "title": "Template",
+      "description": "A pre-built presentation template",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "imageUrl": { "type": "string" },
+        "price": { "type": "number" },
+        "lemonSqueezyVariantId": { "type": "string" }
+      },
+      "required": ["name"]
+    }
+  },
+  "firestore": {
+    "users/{userId}": {
+      "schema": "User",
+      "description": "User profile documents"
+    },
+    "projects/{projectId}": {
+      "schema": "Project",
+      "description": "Presentation projects"
+    },
+    "projects/{projectId}/slides/{slideId}": {
+      "schema": "Slide",
+      "description": "Slides within a project"
+    },
+    "templates/{templateId}": {
+      "schema": "Template",
+      "description": "Public templates"
+    }
+  }
+}
